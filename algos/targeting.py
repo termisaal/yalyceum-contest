@@ -325,6 +325,7 @@ class Game:
 
         # если "жертва" ещё не выбрана или была убита, флот выбирает новую
         if self.targeted_id is None or self.targeted_id not in [x.Id for x in state.Opponent]:
+            # сумма расстояний от всех кораблей до новой жертвы должна быть наименьшей
             self.targeted_id = min(state.Opponent,
                                    key=lambda x: sum([Physics.clen(x.Position - y.Position) for y in state.My])).Id
         targeted = [x for x in state.Opponent if x.Id == self.targeted_id][0]
