@@ -315,7 +315,8 @@ class Game:
     def __init__(self):
         self.targeted_id = None
 
-    def draft(self, _: dict) -> DraftChoice:
+    @staticmethod
+    def draft(_: dict) -> DraftChoice:
         return DraftChoice()  # корабли набираются автоматически
 
     def battle(self, data: dict) -> UserOutput:
@@ -324,21 +325,20 @@ class Game:
 
         # если "жертва" ещё не выбрана или была убита, флот выбирает новую
         if self.targeted_id is None or self.targeted_id not in [x.Id for x in state.Opponent]:
-            self.targeted_id = state.Opponent[0].Id
-            user_output.Message = f'Target acquired: {self.targeted_id}'
+            self.targeted_id = min(state.Opponent,
+                                   key=lambda x: sum([Physics.clen(x.Position - y.Position) for y in state.My])).Id
         targeted = [x for x in state.Opponent if x.Id == self.targeted_id][0]
 
         user_output.UserCommands = []
         for ship in state.My:
             guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
             if guns:
+                user_output.UserCommands.append(Command(Command=MOVE,
+                                                        Parameters=MoveParameters(Id=ship.Id,
+                                                                                  Target=targeted.Position)))
                 # корабль выбирает оружие с наибольшей дальностью
                 ranged_gun = max(guns, key=lambda x: x.Radius)
                 user_output.UserCommands.append(Command(Command=ATTACK,
-                                                        Parameters=AttackParameters(Id=ship.Id,
-                                                                                    Name=ranged_gun.Name,
-                                                                                    Target=targeted.Position)))
-                user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=AttackParameters(Id=ship.Id,
                                                                                     Name=ranged_gun.Name,
                                                                                     Target=targeted.Position)))
