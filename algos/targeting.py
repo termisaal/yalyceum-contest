@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
+from random import random, randint, choice
 
 
 # region Primitives
@@ -333,17 +334,22 @@ class Game:
         user_output.UserCommands = []
         for ship in state.My:
             guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
+
             if guns:
+                # корабль выбирает оружие с наибольшей дальностью
+                ranged_gun = max(guns, key=lambda x: x.Radius)
+
+                # Проверка, что оружие достанет до "жертвы"
+                if ranged_gun.Radius * 2.3 >= (sum(abs(ship.Position.__dict__[key] - value) ** 2
+                                                   for key, value in targeted.Position.__dict__.items()) ** 0.5):
+                    user_output.UserCommands.append(Command(Command=ATTACK,
+                                                            Parameters=AttackParameters(Id=ship.Id,
+                                                                                        Name=ranged_gun.Name,
+                                                                                        Target=targeted.Position)))
+
                 user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=MoveParameters(Id=ship.Id,
                                                                                   Target=targeted.Position)))
-                # корабль выбирает оружие с наибольшей дальностью
-                ranged_gun = max(guns, key=lambda x: x.Radius)
-                user_output.UserCommands.append(Command(Command=ATTACK,
-                                                        Parameters=AttackParameters(Id=ship.Id,
-                                                                                    Name=ranged_gun.Name,
-                                                                                    Target=targeted.Position)))
-
         return user_output
 
     def main(self):
