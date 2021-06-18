@@ -68,6 +68,10 @@ class Physics:
         """Манхэттенская метрика"""
         return sum(map(abs, v.coords))
 
+    @staticmethod
+    def get_len_vector(ship_vector: Vector, enemy_vector: Vector) -> int:
+        return sum(abs(ship_vector.__dict__[key] - value) ** 2 for key, value in enemy_vector.__dict__.items()) ** 0.5
+
 
 # endregion
 
@@ -316,21 +320,29 @@ class Game:
     def __init__(self):
         self.targeted = None
         # вес ближайшего врага ко всем
-        self.main_particle_weight = 0.7
+        self.main_particle_weight = 0.9
         # вес ближайшего врага к конкретной частице
-        self.best_particle_weight = 0.3
+        self.best_particle_weight = 0.1
 
     @staticmethod
     def draft(_: dict) -> DraftChoice:
         return DraftChoice()  # корабли набираются автоматически]
 
-    def velocity_change(self, key: str, value: int, closest_enemy: Ship, ship: Ship) -> int:
-        return (
-                value + self.best_particle_weight * random() *
-                (closest_enemy.Position.__dict__[key] - ship.Position.__dict__[key]) +
-                self.main_particle_weight * random() *
-                (self.targeted.Position.__dict__[key] - ship.Position.__dict__[key])
-        )
+    def velocity_change(self, closest_enemy: Ship, ship: Ship) -> dict:
+        # собственно метод алгоритма роя
+        targeted_position_dict = self.targeted.Position.__dict__
+        closest_enemy_position_dict = closest_enemy.Position.__dict__
+        ship_position_dict = ship.Position.__dict__
+        best_particle_weight_koef = random()
+        main_particle_weight_koef = random()
+
+        return {
+            key: (
+                value + self.best_particle_weight * best_particle_weight_koef *
+                (closest_enemy_position_dict[key] - ship_position_dict[key]) +
+                main_particle_weight_koef * random() *
+                (targeted_position_dict[key] - ship_position_dict[key]))
+            for key, value in ship.Velocity.__dict__.items()}
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
@@ -354,17 +366,15 @@ class Game:
                 # ближайший оппонент к текущему кораблю
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.clen(x.Position - ship.Position))
 
-                # Проверка, что оружие достанет до "жертвы"
-                if ranged_gun.Radius * 2.5 >= (sum(abs(ship.Position.__dict__[key] - value) ** 2
-                                                   for key, value in closest_enemy.Position.__dict__.items()) ** 0.5):
+                # Проверка, что оружие достанет до "жертвы" (взял с запасом)
+                if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position, closest_enemy.Position):
                     user_output.UserCommands.append(Command(Command=ATTACK,
                                                             Parameters=AttackParameters(
                                                                 Id=ship.Id,
                                                                 Name=ranged_gun.Name,
                                                                 Target=closest_enemy.Position)))
 
-                ship.Velocity.__dict__ = {key: self.velocity_change(key, value, closest_enemy, ship)
-                                          for key, value in ship.Velocity.__dict__.items()}
+                ship.Velocity.__dict__ = self.velocity_change(closest_enemy, ship)
 
                 user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=MoveParameters(Id=ship.Id,
