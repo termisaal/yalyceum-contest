@@ -69,8 +69,9 @@ class Physics:
         return sum(map(abs, v.coords))
 
     @staticmethod
-    def get_len_vector(ship_vector: Vector, enemy_vector: Vector) -> int:
-        return sum(abs(ship_vector.__dict__[key] - value) ** 2 for key, value in enemy_vector.__dict__.items()) ** 0.5
+    def get_len_vector(vector_difference: Vector) -> int:
+        # метод, который находит длину раззности векторов
+        return sum(value ** 2 for value in vector_difference.__dict__.values()) ** 0.5
 
 
 # endregion
@@ -330,18 +331,20 @@ class Game:
 
     def velocity_change(self, closest_enemy: Ship, ship: Ship) -> dict:
         # собственно метод алгоритма роя
+        # вынес словари в переменные, чтобы не создавать их десятки раз, пока мы в списочном выражении
         targeted_position_dict = self.targeted.Position.__dict__
         closest_enemy_position_dict = closest_enemy.Position.__dict__
         ship_position_dict = ship.Position.__dict__
         best_particle_weight_koef = random()
         main_particle_weight_koef = random()
 
+        # перевел это на конкретную задачу (https://jenyay.net/Programming/ParticleSwarm#:~:text=vi%2Ct%2B1%20%3D%20vi%2Ct%20%2B%20%CF%86p%20rp%20(pi%20-%20xi%2C%20t)%20%2B%20%CF%86g%20rg%20(gi%20-%20xi%2C%20t))
         return {
             key: (
-                value + self.best_particle_weight * best_particle_weight_koef *
-                (closest_enemy_position_dict[key] - ship_position_dict[key]) +
-                main_particle_weight_koef * random() *
-                (targeted_position_dict[key] - ship_position_dict[key]))
+                    value + self.best_particle_weight * best_particle_weight_koef *
+                    (closest_enemy_position_dict[key] - ship_position_dict[key]) +
+                    main_particle_weight_koef * random() *
+                    (targeted_position_dict[key] - ship_position_dict[key]))
             for key, value in ship.Velocity.__dict__.items()}
 
     def battle(self, data: dict) -> UserOutput:
@@ -353,7 +356,7 @@ class Game:
         # так как корабли движутся, цель выбираем каждый ход
         # сумма расстояний от всех кораблей до новой жертвы должна быть наименьшей
         self.targeted = min(state.Opponent,
-                            key=lambda x: sum([Physics.clen(x.Position - y.Position) for y in state.My]))
+                            key=lambda x: sum([Physics.get_len_vector(y.Position - x.Position) for y in state.My]))
 
         user_output.UserCommands = []
         for ship in state.My:
@@ -364,10 +367,10 @@ class Game:
                 ranged_gun = max(guns, key=lambda x: x.Radius)
 
                 # ближайший оппонент к текущему кораблю
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.clen(x.Position - ship.Position))
+                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
 
                 # Проверка, что оружие достанет до "жертвы" (взял с запасом)
-                if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position, closest_enemy.Position):
+                if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
                     user_output.UserCommands.append(Command(Command=ATTACK,
                                                             Parameters=AttackParameters(
                                                                 Id=ship.Id,
