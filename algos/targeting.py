@@ -339,13 +339,21 @@ class Game:
                 # корабль выбирает оружие с наибольшей дальностью
                 ranged_gun = max(guns, key=lambda x: x.Radius)
 
+                # ближайший оппонент к текущему кораблю
+                closest_enemy = min(state.Opponent, key=lambda x: Physics.clen(x.Position - ship.Position))
+
                 # Проверка, что оружие достанет до "жертвы"
                 if ranged_gun.Radius * 2.3 >= (sum(abs(ship.Position.__dict__[key] - value) ** 2
-                                                   for key, value in targeted.Position.__dict__.items()) ** 0.5):
+                                                   for key, value in closest_enemy.Position.__dict__.items()) ** 0.5):
+
                     user_output.UserCommands.append(Command(Command=ATTACK,
-                                                            Parameters=AttackParameters(Id=ship.Id,
-                                                                                        Name=ranged_gun.Name,
-                                                                                        Target=targeted.Position)))
+                                                            Parameters=AttackParameters(
+                                                                Id=ship.Id,
+                                                                Name=ranged_gun.Name,
+                                                                Target=closest_enemy.Position)))
+                ship.Velocity.__dict__ = {
+                    key: value + random() * (targeted.Position.__dict__[key] - ship.Position.__dict__[key])
+                    for key, value in ship.Velocity.__dict__.items()}
 
                 user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=MoveParameters(Id=ship.Id,
