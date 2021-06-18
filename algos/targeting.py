@@ -314,22 +314,34 @@ class UserOutput(JSONCapability):
 
 class Game:
     def __init__(self):
-        self.targeted_id = None
+        self.targeted = None
+        # вес ближайшего врага ко всем
+        self.main_particle_weight = 0.7
+        # вес ближайшего врага к конкретной частице
+        self.best_particle_weight = 0.3
 
     @staticmethod
     def draft(_: dict) -> DraftChoice:
-        return DraftChoice()  # корабли набираются автоматически
+        return DraftChoice()  # корабли набираются автоматически]
+
+    def velocity_change(self, key: str, value: int, closest_enemy: Ship, ship: Ship) -> int:
+        return (
+                value + self.best_particle_weight * random() *
+                (closest_enemy.Position.__dict__[key] - ship.Position.__dict__[key]) +
+                self.main_particle_weight * random() *
+                (self.targeted.Position.__dict__[key] - ship.Position.__dict__[key])
+        )
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        # если "жертва" ещё не выбрана или была убита, флот выбирает новую
-        if self.targeted_id is None or self.targeted_id not in [x.Id for x in state.Opponent]:
-            # сумма расстояний от всех кораблей до новой жертвы должна быть наименьшей
-            self.targeted_id = min(state.Opponent,
-                                   key=lambda x: sum([Physics.clen(x.Position - y.Position) for y in state.My])).Id
-        targeted = [x for x in state.Opponent if x.Id == self.targeted_id][0]
+        '''# если "жертва" ещё не выбрана или была убита, флот выбирает новую
+        if self.targeted_id is None or self.targeted_id not in [x.Id for x in state.Opponent]:'''
+        # так как корабли движутся, цель выбираем каждый ход
+        # сумма расстояний от всех кораблей до новой жертвы должна быть наименьшей
+        self.targeted = min(state.Opponent,
+                            key=lambda x: sum([Physics.clen(x.Position - y.Position) for y in state.My]))
 
         user_output.UserCommands = []
         for ship in state.My:
@@ -343,21 +355,20 @@ class Game:
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.clen(x.Position - ship.Position))
 
                 # Проверка, что оружие достанет до "жертвы"
-                if ranged_gun.Radius * 2.3 >= (sum(abs(ship.Position.__dict__[key] - value) ** 2
+                if ranged_gun.Radius * 2.5 >= (sum(abs(ship.Position.__dict__[key] - value) ** 2
                                                    for key, value in closest_enemy.Position.__dict__.items()) ** 0.5):
-
                     user_output.UserCommands.append(Command(Command=ATTACK,
                                                             Parameters=AttackParameters(
                                                                 Id=ship.Id,
                                                                 Name=ranged_gun.Name,
                                                                 Target=closest_enemy.Position)))
-                ship.Velocity.__dict__ = {
-                    key: value + random() * (targeted.Position.__dict__[key] - ship.Position.__dict__[key])
-                    for key, value in ship.Velocity.__dict__.items()}
+
+                ship.Velocity.__dict__ = {key: self.velocity_change(key, value, closest_enemy, ship)
+                                          for key, value in ship.Velocity.__dict__.items()}
 
                 user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=targeted.Position)))
+                                                                                  Target=self.targeted.Position)))
         return user_output
 
     def main(self):
