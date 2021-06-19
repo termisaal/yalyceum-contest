@@ -389,11 +389,13 @@ class Game:
             line_in = input()
             data = json.loads(line_in)
 
+            # самому не нравится, но лучшего способа определить к какому этапу относится ввод организаторы не дали
             if 'PlayerId' in data:
                 result = self.draft(data)
             else:
                 result = self.battle(data)
 
+            # не уверен так ли необходимо `ensure_ascii=False`, но оно было в примере организаторов, так что пусть будет
             line_out = json.dumps(result,
                                   default=JSONCapability.to_json,
                                   ensure_ascii=False)
