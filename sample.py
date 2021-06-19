@@ -68,6 +68,72 @@ class Physics:
         """Манхэттенская метрика"""
         return sum(map(abs, v.coords))
 
+    @staticmethod
+    def get_len_vector(vector_diff: Vector) -> int:
+        """Метод для нахождения длины разности векторов"""
+        return sum(value ** 2 for value in vector_diff.__dict__.values()) ** 0.5
+
+    @staticmethod
+    def bresenham_ray(point1: Vector, point2: Vector) -> List[Vector]:
+        """Метод для построение вектора по алгоритмы Брезенхама (https://clck.ru/Vbigh)"""
+
+        x1, y1, z1 = point1.coords
+        x2, y2, z2 = point2.coords
+
+        points = [(x1, y1, z1)]
+        dx = abs(x2 - x1)
+        dy = abs(y2 - y1)
+        dz = abs(z2 - z1)
+
+        xs = int(x2 > x1)
+        ys = int(y2 > y1)
+        zs = int(z2 > z1)
+
+        if dx >= dy and dx >= dz:
+            p1 = 2 * dy - dx
+            p2 = 2 * dz - dx
+            while x1 != x2:
+                x1 += xs
+                if p1 >= 0:
+                    y1 += ys
+                    p1 -= 2 * dx
+                if p2 >= 0:
+                    z1 += zs
+                    p2 -= 2 * dx
+                p1 += 2 * dy
+                p2 += 2 * dz
+                points.append(Vector(x1, y1, z1))
+        elif dy >= dx and dy >= dz:
+            p1 = 2 * dx - dy
+            p2 = 2 * dz - dy
+            while y1 != y2:
+                y1 += ys
+                if p1 >= 0:
+                    x1 += xs
+                    p1 -= 2 * dy
+                if p2 >= 0:
+                    z1 += zs
+                    p2 -= 2 * dy
+                p1 += 2 * dx
+                p2 += 2 * dz
+                points.append(Vector(x1, y1, z1))
+        else:
+            p1 = 2 * dy - dz
+            p2 = 2 * dx - dz
+            while z1 != z2:
+                z1 += zs
+                if p1 >= 0:
+                    y1 += ys
+                    p1 -= 2 * dz
+                if p2 >= 0:
+                    x1 += xs
+                    p2 -= 2 * dz
+                p1 += 2 * dy
+                p2 += 2 * dx
+                points.append(Vector(x1, y1, z1))
+
+        return points
+
 
 # endregion
 
