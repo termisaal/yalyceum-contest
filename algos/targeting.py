@@ -324,6 +324,10 @@ class Game:
         self.main_particle_weight = 0.9
         # вес ближайшего врага к конкретной частице
         self.best_particle_weight = 0.1
+        # построение готово
+        self.ready = False
+        # счетчик ходов
+        self.ready_commands = 0
 
     @staticmethod
     def draft(_: dict) -> DraftChoice:
@@ -343,6 +347,51 @@ class Game:
                       (closest_enemy_position_raw[key] - ship_position_raw[key]) +
                       main_particle_weight_coeff * random() * (targeted_position_raw[key] - ship_position_raw[key]))
                 for key, value in ship.Velocity.__dict__.items()}
+
+    def building_ships(self, ship: Ship) -> Command:
+        # самому не нравится, как это все работает, но другого способа не придумал
+        # функция, которая занимается постраеним кораблей
+        if ship.Id == 0:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(0, 0, 7)))
+        elif ship.Id == 4:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(8, 0, 8)))
+        elif ship.Id == 1:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector((2 if self.ready_commands <= 2 else 0), 8, 2)))
+        elif ship.Id == 3:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector((6 if self.ready_commands <= 2 else 8), 8, 1)))
+        elif ship.Id == 2:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(4, 4, 0)))
+
+        if ship.Id == 10000:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(28, 28, 21)))
+        elif ship.Id == 10004:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(20, 28, 20)))
+        elif ship.Id == 10001:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector((26 if self.ready_commands <= 2 else 28), 20, 26)))
+        elif ship.Id == 10003:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector((22 if self.ready_commands <= 2 else 20), 20, 27)))
+        elif ship.Id == 10002:
+            return Command(Command=MOVE,
+                           Parameters=MoveParameters(Id=ship.Id,
+                                                     Target=Vector(24, 24, 28)))
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
@@ -371,12 +420,18 @@ class Game:
                                                                 Id=ship.Id,
                                                                 Name=ranged_gun.Name,
                                                                 Target=closest_enemy.Position)))
-
-                ship.Velocity.__dict__ = self.velocity_change(closest_enemy, ship)
-
-                user_output.UserCommands.append(Command(Command=MOVE,
-                                                        Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=self.targeted.Position)))
+                # костыль, как и многое, что тут есть
+                if not self.ready:
+                    user_output.UserCommands.append(self.building_ships(ship))
+                else:
+                    ship.Velocity.x, ship.Velocity.y, ship.Velocity.z = self.velocity_change(closest_enemy,
+                                                                                             ship).values()
+                    user_output.UserCommands.append(Command(Command=MOVE,
+                                                            Parameters=MoveParameters(Id=ship.Id,
+                                                                                      Target=self.targeted.Position)))
+        self.ready_commands += 1
+        if self.ready_commands >= 10:
+            self.ready = True
         return user_output
 
     def main(self):
