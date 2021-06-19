@@ -1,5 +1,5 @@
 """
-Основаная идея заключалается в отстреле кораблей противника по одному
+Файл с говнокодом
 """
 
 import json
@@ -70,7 +70,7 @@ class Physics:
 
     @staticmethod
     def get_len_vector(vector_difference: Vector) -> int:
-        """Метод, который находит длину раззности векторов"""
+        # метод, который находит длину раззности векторов
         return sum(value ** 2 for value in vector_difference.__dict__.values()) ** 0.5
 
 
