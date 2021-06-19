@@ -327,32 +327,27 @@ class Game:
 
     @staticmethod
     def draft(_: dict) -> DraftChoice:
-        return DraftChoice()  # корабли набираются автоматически]
+        return DraftChoice()  # корабли набираются автоматически
 
     def velocity_change(self, closest_enemy: Ship, ship: Ship) -> dict:
         # собственно метод алгоритма роя
         # вынес словари в переменные, чтобы не создавать их десятки раз, пока мы в списочном выражении
-        targeted_position_dict = self.targeted.Position.__dict__
-        closest_enemy_position_dict = closest_enemy.Position.__dict__
-        ship_position_dict = ship.Position.__dict__
-        best_particle_weight_koef = random()
-        main_particle_weight_koef = random()
+        targeted_position_raw = self.targeted.Position.__dict__
+        closest_enemy_position_raw = closest_enemy.Position.__dict__
+        ship_position_raw = ship.Position.__dict__
+        best_particle_weight_coeff = random()
+        main_particle_weight_coeff = random()
 
-        # перевел это на конкретную задачу (https://jenyay.net/Programming/ParticleSwarm#:~:text=vi%2Ct%2B1%20%3D%20vi%2Ct%20%2B%20%CF%86p%20rp%20(pi%20-%20xi%2C%20t)%20%2B%20%CF%86g%20rg%20(gi%20-%20xi%2C%20t))
-        return {
-            key: (
-                    value + self.best_particle_weight * best_particle_weight_koef *
-                    (closest_enemy_position_dict[key] - ship_position_dict[key]) +
-                    main_particle_weight_koef * random() *
-                    (targeted_position_dict[key] - ship_position_dict[key]))
-            for key, value in ship.Velocity.__dict__.items()}
+        # перевел это на конкретную задачу (https://clck.ru/VbhZs)
+        return {key: (value + self.best_particle_weight * best_particle_weight_coeff *
+                      (closest_enemy_position_raw[key] - ship_position_raw[key]) +
+                      main_particle_weight_coeff * random() * (targeted_position_raw[key] - ship_position_raw[key]))
+                for key, value in ship.Velocity.__dict__.items()}
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        '''# если "жертва" ещё не выбрана или была убита, флот выбирает новую
-        if self.targeted_id is None or self.targeted_id not in [x.Id for x in state.Opponent]:'''
         # так как корабли движутся, цель выбираем каждый ход
         # сумма расстояний от всех кораблей до новой жертвы должна быть наименьшей
         self.targeted = min(state.Opponent,
