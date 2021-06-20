@@ -74,65 +74,67 @@ class Physics:
         return sum(value ** 2 for value in vector_diff.__dict__.values()) ** 0.5
 
     @staticmethod
-    def bresenham_ray(point1: Vector, point2: Vector) -> List[Vector]:
+    def bresenham_ray(point1: Vector, point2: Vector, length: int = None) -> List[Vector]:
         """Метод для построение вектора по алгоритмы Брезенхама (https://clck.ru/Vbigh)"""
 
         x1, y1, z1 = point1.coords
         x2, y2, z2 = point2.coords
 
         points = [(x1, y1, z1)]
-        dx = abs(x2 - x1)
-        dy = abs(y2 - y1)
-        dz = abs(z2 - z1)
+        x_shift = abs(x2 - x1)
+        y_shift = abs(y2 - y1)
+        z_shift = abs(z2 - z1)
 
-        xs = int(x2 > x1)
-        ys = int(y2 > y1)
-        zs = int(z2 > z1)
+        x_step = int(x2 > x1)
+        y_step = int(y2 > y1)
+        z_step = int(z2 > z1)
 
-        if dx >= dy and dx >= dz:
-            p1 = 2 * dy - dx
-            p2 = 2 * dz - dx
+        # изменения поведения в зависимости от ведущей оси
+        if x_shift >= y_shift and x_shift >= z_shift:
+            # p1, p2 - смещение относительно ведущей оси, не стал изменять названия переменных
+            p1 = 2 * y_shift - x_shift
+            p2 = 2 * z_shift - x_shift
             while x1 != x2:
-                x1 += xs
+                x1 += x_step
                 if p1 >= 0:
-                    y1 += ys
-                    p1 -= 2 * dx
+                    y1 += y_step
+                    p1 -= 2 * x_shift
                 if p2 >= 0:
-                    z1 += zs
-                    p2 -= 2 * dx
-                p1 += 2 * dy
-                p2 += 2 * dz
+                    z1 += z_step
+                    p2 -= 2 * x_shift
+                p1 += 2 * y_shift
+                p2 += 2 * z_shift
                 points.append(Vector(x1, y1, z1))
-        elif dy >= dx and dy >= dz:
-            p1 = 2 * dx - dy
-            p2 = 2 * dz - dy
+        elif y_shift >= x_shift and y_shift >= z_shift:
+            p1 = 2 * x_shift - y_shift
+            p2 = 2 * z_shift - y_shift
             while y1 != y2:
-                y1 += ys
+                y1 += y_step
                 if p1 >= 0:
-                    x1 += xs
-                    p1 -= 2 * dy
+                    x1 += x_step
+                    p1 -= 2 * y_shift
                 if p2 >= 0:
-                    z1 += zs
-                    p2 -= 2 * dy
-                p1 += 2 * dx
-                p2 += 2 * dz
+                    z1 += z_step
+                    p2 -= 2 * y_shift
+                p1 += 2 * x_shift
+                p2 += 2 * z_shift
                 points.append(Vector(x1, y1, z1))
         else:
-            p1 = 2 * dy - dz
-            p2 = 2 * dx - dz
+            p1 = 2 * y_shift - z_shift
+            p2 = 2 * x_shift - z_shift
             while z1 != z2:
-                z1 += zs
+                z1 += z_step
                 if p1 >= 0:
-                    y1 += ys
-                    p1 -= 2 * dz
+                    y1 += y_step
+                    p1 -= 2 * z_shift
                 if p2 >= 0:
-                    x1 += xs
-                    p2 -= 2 * dz
-                p1 += 2 * dy
-                p2 += 2 * dx
+                    x1 += x_step
+                    p2 -= 2 * z_shift
+                p1 += 2 * y_shift
+                p2 += 2 * x_shift
                 points.append(Vector(x1, y1, z1))
 
-        return points
+        return points[:length or 999]  # не самый лучший вариант, зато в коде места не занимает
 
 
 # endregion
