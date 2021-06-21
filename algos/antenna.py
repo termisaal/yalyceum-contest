@@ -402,8 +402,8 @@ class UserOutput(JSONCapability):
 class Game:
     def __init__(self):
         self.draft_options = None
-        self.setup = 5
-        self.angle = -3
+        self.setup = 7
+        self.angle = 1
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
@@ -418,6 +418,13 @@ class Game:
         user_output.UserCommands = []
 
         if self.setup == 7:
+            for ship in state.My:
+                user_output.UserCommands.append(Command(Command=MOVE,
+                                                        Parameters=MoveParameters(Id=ship.Id,
+                                                                                  Target=ship.Position +
+                                                                                         Vector(3, 3, 3) *
+                                                                                         self.draft_options.PlayerId)))
+
             self.setup -= 1
         elif self.setup > 0:
             center = Vector(3, 3, 3) if self.draft_options.PlayerId > 0 else Vector(26, 26, 26)
