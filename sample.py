@@ -71,7 +71,8 @@ class Physics:
     @staticmethod
     def get_len_vector(vector_diff: Vector) -> int:
         """Метод для нахождения длины разности векторов"""
-        return sum(value ** 2 for value in vector_diff.__dict__.values()) ** 0.5
+
+        return sum(value ** 2 for value in vector_diff.coords) ** 0.5
 
     @staticmethod
     def bresenham_ray(point1: Vector, point2: Vector, length: int = None) -> List[Vector]:
@@ -255,7 +256,7 @@ class DraftOptions(JSONCapability):
 
     @classmethod
     def from_json(cls, data):
-        data['StartArea'] = MapRegion.from_json(['StartArea'])
+        data['StartArea'] = MapRegion.from_json(data['StartArea'])
         data['Equipment'] = list(map(DraftEquipment.from_json, data['Equipment']))
         data['Ships'] = list(map(DraftCompleteShip.from_json, data['Ships']))
         return cls(**data)

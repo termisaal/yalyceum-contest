@@ -5,6 +5,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
+from math import sin, cos
 from typing import List
 
 
@@ -70,7 +71,8 @@ class Physics:
     @staticmethod
     def get_len_vector(vector_diff: Vector) -> int:
         """Метод для нахождения длины разности векторов"""
-        return sum(value ** 2 for value in vector_diff.__dict__.values()) ** 0.5
+
+        return sum(value ** 2 for value in vector_diff.coords) ** 0.5
 
     @staticmethod
     def bresenham_ray(point1: Vector, point2: Vector, length: int = None) -> List[Vector]:
@@ -134,6 +136,19 @@ class Physics:
                 points.append(Vector(x1, y1, z1))
 
         return points[:length or 999]  # не самый лучший вариант, зато в коде места не занимает
+
+    @staticmethod
+    def circle_points(center: Vector, amount: int, angle: int):
+        """Метод для нахождения координат построения"""
+
+        circle_shifts = [Vector(-1, 3, 1), Vector(0, 0, 3), Vector(1, 3, -1),
+                         Vector(2, 2, -1), Vector(3, 1, -1), Vector(3, 0, 0),
+                         Vector(3, -1, 1), Vector(2, -1, 2), Vector(1, -1, 3),
+                         Vector(0, 0, 3), Vector(-1, 1, 3), Vector(-1, 2, 2)]
+        k = len(circle_shifts)
+
+        for i in range(angle, k + angle, k // amount):
+            yield center + circle_shifts[i % k]
 
 
 # endregion
@@ -254,7 +269,7 @@ class DraftOptions(JSONCapability):
 
     @classmethod
     def from_json(cls, data):
-        data['StartArea'] = MapRegion.from_json(['StartArea'])
+        data['StartArea'] = MapRegion.from_json(data['StartArea'])
         data['Equipment'] = list(map(DraftEquipment.from_json, data['Equipment']))
         data['Ships'] = list(map(DraftCompleteShip.from_json, data['Ships']))
         return cls(**data)
@@ -381,13 +396,14 @@ class UserOutput(JSONCapability):
 
 class Game:
     def __init__(self):
-        pass
+        self.player_id = 0
+        self.angle = 0
 
     def draft(self, data: dict) -> DraftChoice:
         draft_options = DraftOptions.from_json(data)
         draft_choice = DraftChoice()
 
-        # тут должен быть алгоритм выбора кораблей
+        self.player_id = draft_options.PlayerId
 
         return draft_choice
 
@@ -395,7 +411,15 @@ class Game:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        # тут должен быть алгоритм ведения боя
+        center = Vector(5, 5, 5) if self.player_id else Vector(25, 25, 25)
+
+        user_output.UserCommands = []
+        for ship, ship_coord in zip(state.My, Physics.circle_points(center, len(state.My), self.angle)):
+            user_output.UserCommands.append(Command(Command=MOVE,
+                                                    Parameters=MoveParameters(Id=ship.Id,
+                                                                              Target=ship_coord)))
+
+        self.angle += 1
 
         return user_output
 
