@@ -42,6 +42,9 @@ class Vector:
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
 
+    def __le__(self, other):
+        return self.x <= other.x and self.y <= other.y and self.z <= other.z
+
     @property
     def coords(self):
         return self.x, self.y, self.z
@@ -405,7 +408,6 @@ class Game:
         self.draft_options = None
         self.setup = 7
         self.angle = 1
-        self.targeted = None
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
@@ -414,15 +416,29 @@ class Game:
 
         return draft_choice
 
-    def attack(self, ship: Ship, closest_enemy: Ship) -> Command:
-        guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
+    @staticmethod
+    def attack(current_ship: Ship, closest_enemy: Ship, my_ships: List[Ship]) -> Command:
+        guns = [x for x in current_ship.Equipment if isinstance(x, GunBlock)]
         if guns:
             # корабль выбирает оружие с наибольшей дальностью
             ranged_gun = max(guns, key=lambda x: x.Radius)
 
-            if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
+            if ranged_gun.Radius * 3 >= Physics.get_len_vector(current_ship.Position - closest_enemy.Position):
+
+                # точки луча по алгоритму Брезенхейма
+                points = Physics.bresenham_ray(current_ship.Position, closest_enemy.Position)
+
+                # возможные длины разности векторов
+                data = [1.4142135623730951, 1.7320508075688772, 0.0, 1.0]
+                for ship in my_ships:
+                    if ship is not current_ship:
+                        # проверяем, что длина вектора в data и что точка луча больше или равна
+                        if any([Physics.get_len_vector(point - ship.Position)
+                                in data and ship.Position.coords <= point for point in points]):
+                            return None
+
                 return Command(Command=ATTACK,
-                               Parameters=AttackParameters(Id=ship.Id,
+                               Parameters=AttackParameters(Id=current_ship.Id,
                                                            Name=ranged_gun.Name,
                                                            Target=closest_enemy.Position))
         return None
@@ -432,22 +448,12 @@ class Game:
         user_output = UserOutput()
         user_output.UserCommands = []
 
-        if self.targeted is None or self.targeted.Id not in [enemy.Id for enemy in state.Opponent]:
-            self.targeted = min(state.Opponent,
-                                key=lambda x: sum([Physics.get_len_vector(y.Position - x.Position) for y in state.My]))
-
         if self.setup == 7:
             for ship in state.My:
-                user_output.UserCommands.append(Command(Command=MOVE,
-                                                        Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=ship.Position +
-                                                                                         Vector(3, 3, 3) *
-                                                                                         self.draft_options.PlayerId)))
-
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
-                if command is not None:
-                    user_output.UserCommands.append(command)
+                user_output.UserCommands.append(Command(
+                    Command=MOVE,
+                    Parameters=MoveParameters(Id=ship.Id,
+                                              Target=ship.Position + Vector(3, 3, 3) * self.draft_options.PlayerId)))
 
             self.setup -= 1
         elif self.setup > 0:
@@ -459,10 +465,6 @@ class Game:
                 user_output.UserCommands.append(Command(Command=MOVE,
                                                         Parameters=MoveParameters(Id=ship.Id,
                                                                                   Target=ship_coord)))
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
-                if command is not None:
-                    user_output.UserCommands.append(command)
             self.setup -= 1
         else:
             center = Vector(15, 15, 15)
@@ -474,7 +476,7 @@ class Game:
                                                         Parameters=MoveParameters(Id=ship.Id,
                                                                                   Target=ship_coord)))
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
+                command = self.attack(ship, closest_enemy, state.My)
                 if command is not None:
                     user_output.UserCommands.append(command)
             self.angle += 1
