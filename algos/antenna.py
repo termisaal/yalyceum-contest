@@ -239,7 +239,7 @@ class DraftEquipment(JSONCapability):
 
     @classmethod
     def from_json(cls, data):
-        data['Equipment'] = list(map(Block.from_json, data['Equipment']))
+        data['Equipment'] = Block.from_json(data['Equipment'])
         return cls(**data)
 
 
@@ -261,17 +261,17 @@ class DraftOptions(JSONCapability):
     MapSize: int
     Money: int
     MaxShipsCount: int
-    DraftTimeout: int
-    BattleRoundTimeout: int
     StartArea: MapRegion
     Equipment: List[DraftEquipment]
-    Ships: List[DraftCompleteShip]
+    CompleteShips: List[DraftCompleteShip]
+    DraftTimeout: int = None
+    BattleRoundTimeout: int = None
 
     @classmethod
     def from_json(cls, data):
         data['StartArea'] = MapRegion.from_json(data['StartArea'])
         data['Equipment'] = list(map(DraftEquipment.from_json, data['Equipment']))
-        data['Ships'] = list(map(DraftCompleteShip.from_json, data['Ships']))
+        data['CompleteShips'] = list(map(DraftCompleteShip.from_json, data['CompleteShips']))
         return cls(**data)
 
 
@@ -396,14 +396,12 @@ class UserOutput(JSONCapability):
 
 class Game:
     def __init__(self):
-        self.player_id = 0
+        self.draft_options = None
         self.angle = 0
 
     def draft(self, data: dict) -> DraftChoice:
-        draft_options = DraftOptions.from_json(data)
+        self.draft_options = DraftOptions.from_json(data)
         draft_choice = DraftChoice()
-
-        self.player_id = draft_options.PlayerId
 
         return draft_choice
 
@@ -411,7 +409,7 @@ class Game:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        center = Vector(5, 5, 5) if self.player_id else Vector(25, 25, 25)
+        center = Vector(5, 5, 5) if self.draft_options.PlayerId else Vector(25, 25, 25)
 
         user_output.UserCommands = []
         for ship, ship_coord in zip(state.My, Physics.circle_points(center, len(state.My), self.angle)):

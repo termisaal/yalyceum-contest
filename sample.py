@@ -226,7 +226,7 @@ class DraftEquipment(JSONCapability):
 
     @classmethod
     def from_json(cls, data):
-        data['Equipment'] = list(map(Block.from_json, data['Equipment']))
+        data['Equipment'] = Block.from_json(data['Equipment'])
         return cls(**data)
 
 
@@ -248,17 +248,17 @@ class DraftOptions(JSONCapability):
     MapSize: int
     Money: int
     MaxShipsCount: int
-    DraftTimeout: int
-    BattleRoundTimeout: int
     StartArea: MapRegion
     Equipment: List[DraftEquipment]
-    Ships: List[DraftCompleteShip]
+    CompleteShips: List[DraftCompleteShip]
+    DraftTimeout: int = None
+    BattleRoundTimeout: int = None
 
     @classmethod
     def from_json(cls, data):
         data['StartArea'] = MapRegion.from_json(data['StartArea'])
         data['Equipment'] = list(map(DraftEquipment.from_json, data['Equipment']))
-        data['Ships'] = list(map(DraftCompleteShip.from_json, data['Ships']))
+        data['CompleteShips'] = list(map(DraftCompleteShip.from_json, data['CompleteShips']))
         return cls(**data)
 
 
@@ -383,13 +383,13 @@ class UserOutput(JSONCapability):
 
 class Game:
     def __init__(self):
-        pass
+        self.draft_options = None
 
     def draft(self, data: dict) -> DraftChoice:
-        draft_options = DraftOptions.from_json(data)
+        self.draft_options = DraftOptions.from_json(data)
         draft_choice = DraftChoice()
 
-        # тут должен быть алгоритм выбора кораблей
+        # тут должно быть поведение во время драфта
 
         return draft_choice
 
@@ -397,7 +397,7 @@ class Game:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        # тут должен быть алгоритм ведения боя
+        # тут должно быть поведение во время боя
 
         return user_output
 
