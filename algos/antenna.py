@@ -5,7 +5,6 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from math import sin, cos
 from typing import List
 
 
@@ -31,6 +30,13 @@ class Vector:
         return Vector(self.x - other.x,
                       self.y - other.y,
                       self.z - other.z)
+
+    def __mul__(self, k: int):
+        if not isinstance(k, int):
+            raise TypeError()
+        return Vector(self.x * k,
+                      self.y * k,
+                      self.z * k)
 
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
@@ -138,7 +144,7 @@ class Physics:
         return points[:length or 999]  # не самый лучший вариант, зато в коде места не занимает
 
     @staticmethod
-    def circle_points(center: Vector, amount: int, angle: int):
+    def circle_points(center: Vector, amount: int, angle: int, player_id: int):
         """Метод для нахождения координат построения"""
 
         circle_shifts = [Vector(-1, 3, 1), Vector(0, 0, 3), Vector(1, 3, -1),
@@ -148,7 +154,7 @@ class Physics:
         k = len(circle_shifts)
 
         for i in range(angle, k + angle, k // amount):
-            yield center + circle_shifts[i % k]
+            yield center + circle_shifts[i % k] * player_id
 
 
 # endregion
@@ -397,10 +403,12 @@ class UserOutput(JSONCapability):
 class Game:
     def __init__(self):
         self.draft_options = None
-        self.angle = 0
+        self.setup = 5
+        self.angle = -3
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
+        self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
         draft_choice = DraftChoice()
 
         return draft_choice
@@ -408,16 +416,30 @@ class Game:
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
         user_output = UserOutput()
-
-        center = Vector(26, 26, 26) if self.draft_options.PlayerId else Vector(3, 3, 3)
-
         user_output.UserCommands = []
-        for ship, ship_coord in zip(state.My, Physics.circle_points(center, len(state.My), self.angle)):
-            user_output.UserCommands.append(Command(Command=MOVE,
-                                                    Parameters=MoveParameters(Id=ship.Id,
-                                                                              Target=ship_coord)))
 
-        self.angle += 1
+        if self.setup == 7:
+            self.setup -= 1
+        elif self.setup > 0:
+            center = Vector(3, 3, 3) if self.draft_options.PlayerId > 0 else Vector(26, 26, 26)
+
+            for ship, ship_coord in zip(state.My, Physics.circle_points(center,
+                                                                        len(state.My), 0,
+                                                                        self.draft_options.PlayerId)):
+                user_output.UserCommands.append(Command(Command=MOVE,
+                                                        Parameters=MoveParameters(Id=ship.Id,
+                                                                                  Target=ship_coord)))
+            self.setup -= 1
+        else:
+            center = Vector(3, 3, 3) if self.draft_options.PlayerId > 0 else Vector(26, 26, 26)
+
+            for ship, ship_coord in zip(state.My, Physics.circle_points(center,
+                                                                        len(state.My), self.angle,
+                                                                        self.draft_options.PlayerId)):
+                user_output.UserCommands.append(Command(Command=MOVE,
+                                                        Parameters=MoveParameters(Id=ship.Id,
+                                                                                  Target=ship_coord)))
+            self.angle += 1
 
         return user_output
 
