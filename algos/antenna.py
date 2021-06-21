@@ -146,11 +146,10 @@ class Physics:
     @staticmethod
     def circle_points(center: Vector, amount: int, angle: int, player_id: int):
         """Метод для нахождения координат построения"""
+        circle_shifts = [Vector(-1, 2, 3), Vector(-1, 3, 2), Vector(-1, 4, 1), Vector(0, 4, 0), Vector(1, 4, -1),
+                         Vector(2, 3, -1), Vector(3, 2, -1), Vector(4, 1, -1), Vector(4, 0, 0), Vector(4, -1, 1),
+                         Vector(3, -1, 2), Vector(2, -1, 3), Vector(1, -1, 4), Vector(0, 0, 4), Vector(-1, 1, 4)]
 
-        circle_shifts = [Vector(-1, 3, 1), Vector(0, 0, 3), Vector(1, 3, -1),
-                         Vector(2, 2, -1), Vector(3, 1, -1), Vector(3, 0, 0),
-                         Vector(3, -1, 1), Vector(2, -1, 2), Vector(1, -1, 3),
-                         Vector(0, 0, 3), Vector(-1, 1, 3), Vector(-1, 2, 2)]
         k = len(circle_shifts)
 
         for i in range(angle, k + angle, k // amount):
