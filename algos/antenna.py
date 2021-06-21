@@ -409,7 +409,7 @@ class Game:
         state = State.from_json(data)
         user_output = UserOutput()
 
-        center = Vector(5, 5, 5) if self.draft_options.PlayerId else Vector(25, 25, 25)
+        center = Vector(25, 25, 25) if self.draft_options.PlayerId else Vector(5, 5, 5)
 
         user_output.UserCommands = []
         for ship, ship_coord in zip(state.My, Physics.circle_points(center, len(state.My), self.angle)):
