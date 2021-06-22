@@ -480,12 +480,27 @@ class Game:
         draft_choice = DraftChoice()
 
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
+        draft_choice.Ships = [DraftShipChoice(CompleteShipId='forward')] * 8
+        ''' if self.draft_options.PlayerId > 0:
+            for i in range(0, 13, 4):
+                ship = DraftShipChoice(CompleteShipId='forward', Position=f'{i}/0/0')
+                draft_choice.Ships.append(ship)
+            for i in range(16, 30, 4):
+                ship = DraftShipChoice(CompleteShipId='daedalus', Position=f'{i}/0/0')
+                draft_choice.Ships.append(ship)
 
-        draft_choice.Ships = [DraftShipChoice(CompleteShipId='forward')] * 3 + \
-                             [DraftShipChoice(CompleteShipId='daedalus')] + \
-                             [DraftShipChoice(CompleteShipId='eclipse')]
-        draft_choice.Message = f'money: {self.draft_options.Money} | available ships: ' \
-                               f'{", ".join(f"{ship.Id}-{ship.Price}" for ship in self.draft_options.CompleteShips)}'
+        else:
+            for i in range(28, 15, -4):
+                ship = DraftShipChoice(CompleteShipId='forward', Position=f'{i}/28/28')
+                draft_choice.Ships.append(ship)
+            for i in range(12, -1, -4):
+                ship = DraftShipChoice(CompleteShipId='daedalus', Position=f'{i}/28/28')
+                draft_choice.Ships.append(ship)'''
+
+        draft_choice.Message = f'money: {self.draft_options.Money}\n available ships: ' \
+                               f'{", ".join(f"{ship.Id}-{ship.Price}" for ship in self.draft_options.CompleteShips)}' \
+                               f'\nMaxShips {self.draft_options.MaxShipsCount}' \
+                               f'\n StartArea {self.draft_options.StartArea}'
 
         return draft_choice
 
