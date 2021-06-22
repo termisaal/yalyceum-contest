@@ -192,6 +192,7 @@ class BlockType(Enum):
 
 
 class EffectType(Enum):
+    Railgun = 1
     Blaster = 0
 
 

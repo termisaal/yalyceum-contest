@@ -181,6 +181,7 @@ class BlockType(Enum):
 
 class EffectType(Enum):
     Blaster = 0
+    Railgun = 1
 
 
 @dataclass
