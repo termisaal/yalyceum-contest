@@ -186,8 +186,8 @@ class BlockType(Enum):
     Gun = 1
     Engine = 2
     Health = 3
-    Delta = 4
-    Daedalus = 7
+    Shield = 4
+    Heal = 7
 
 
 class EffectType(Enum):
@@ -209,11 +209,10 @@ class Block(JSONCapability):
             return EngineBlock(**data)
         elif BlockType(data['Type']) == BlockType.Health:
             return HealthBlock(**data)
-        elif BlockType(data['Type']) == BlockType.Delta:
-            return DeltaBlock(**data)
-        elif BlockType(data['Type']) == BlockType.Daedalus:
-            return DaedalusBlock(**data)
-
+        elif BlockType(data['Type']) == BlockType.Shield:
+            return ShieldBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Heal:
+            return HealBlock(**data)
 
 
 @dataclass
@@ -247,21 +246,19 @@ class HealthBlock(Block):
 
 
 @dataclass
-class DeltaBlock(Block):
-    Type = BlockType.Delta
-    Armor: int
+class ShieldBlock(Block):
+    Type = BlockType.Shield
     EnergyPrice: int
-    Name: str
+    Armor: int
 
 
 @dataclass
-class DaedalusBlock(Block):
-    Type = BlockType.Delta
+class HealBlock(Block):
+    Type = BlockType.Heal
     EnergyPrice: int
     Radius: int
     HealthGain: int
     EnergyGain: int
-    Name: str
 
 
 # endregion
@@ -402,6 +399,7 @@ class State(JSONCapability):
 MOVE = 'MOVE'
 ACCELERATE = 'ACCELERATE'
 ATTACK = 'ATTACK'
+DEFEND = 'DEFEND'
 
 
 @dataclass
@@ -429,6 +427,12 @@ class AttackParameters(CommandParameters):
 
 
 @dataclass
+class DefendParameters(CommandParameters):
+    Id: int
+    Name: str
+
+
+@dataclass
 class Command(JSONCapability):
     Command: str
     Parameters: CommandParameters
@@ -451,13 +455,7 @@ class Game:
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
-        money = self.draft_options.Money
-        self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
-        ships = []
-        for _ in range(self.draft_options.MaxShipsCount):
-            pass
-
-        draft_choice = DraftChoice(Ships=ships)
+        draft_choice = DraftChoice()
 
         return draft_choice
 
@@ -469,19 +467,6 @@ class Game:
             ranged_gun = max(guns, key=lambda x: x.Radius)
 
             if ranged_gun.Radius * 3 >= Physics.get_len_vector(current_ship.Position - closest_enemy.Position):
-
-                '''# точки луча по алгоритму Брезенхейма
-                points = Physics.bresenham_ray(current_ship.Position, closest_enemy.Position)
-
-                # возможные длины разности векторов
-                data = [1.4142135623730951, 1.7320508075688772, 0.0, 1.0]
-                for ship in my_ships:
-                    if ship is not current_ship:
-                        # проверяем, что длина вектора в data и что точка луча больше или равна
-                        if any([Physics.get_len_vector(point - ship.Position)
-                                in data and ship.Position <= point for point in points]):
-                            return None'''
-
                 return Command(Command=ATTACK,
                                Parameters=AttackParameters(Id=current_ship.Id,
                                                            Name=ranged_gun.Name,

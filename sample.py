@@ -32,8 +32,33 @@ class Vector:
                       self.y - other.y,
                       self.z - other.z)
 
+    def __mul__(self, other):
+        if not isinstance(other, int):
+            raise TypeError()
+        return Vector(self.x * other,
+                      self.y * other,
+                      self.z * other)
+
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
+
+    def __eq__(self, other):
+        return self.coords == other.coords
+
+    def __ne__(self, other):
+        return self.coords != other.coords
+
+    def __gt__(self, other):
+        return self.coords > other.coords
+
+    def __lt__(self, other):
+        return self.coords < other.coords
+
+    def __ge__(self, other):
+        return self.coords >= other.coords
+
+    def __le__(self, other):
+        return self.coords <= other.coords
 
     @property
     def coords(self):
@@ -149,6 +174,8 @@ class BlockType(Enum):
     Gun = 1
     Engine = 2
     Health = 3
+    Shield = 4
+    Heal = 7
 
 
 class EffectType(Enum):
@@ -170,6 +197,10 @@ class Block(JSONCapability):
             return EngineBlock(**data)
         elif BlockType(data['Type']) == BlockType.Health:
             return HealthBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Shield:
+            return ShieldBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Heal:
+            return HealBlock(**data)
 
 
 @dataclass
@@ -200,6 +231,22 @@ class HealthBlock(Block):
     Type = BlockType.Health
     MaxHealth: int
     StartHealth: int
+
+
+@dataclass
+class ShieldBlock(Block):
+    Type = BlockType.Shield
+    EnergyPrice: int
+    Armor: int
+
+
+@dataclass
+class HealBlock(Block):
+    Type = BlockType.Heal
+    EnergyPrice: int
+    Radius: int
+    HealthGain: int
+    EnergyGain: int
 
 
 # endregion
