@@ -375,6 +375,7 @@ class State(JSONCapability):
         data['My'] = list(map(Ship.from_json, data['My']))
         data['Opponent'] = list(map(Ship.from_json, data['Opponent']))
         # data['FireInfos'] = list(map(FireInfo.from_json, data['FireInfos']))
+        data.pop('FireInfos')
         return cls(**data)
 
 

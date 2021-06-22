@@ -380,13 +380,14 @@ class FireInfo(JSONCapability):
 class State(JSONCapability):
     My: List[Ship]
     Opponent: List[Ship]
-    FireInfos: List[FireInfo]
+    # FireInfos: List[FireInfo]
 
     @classmethod
     def from_json(cls, data):
         data['My'] = list(map(Ship.from_json, data['My']))
         data['Opponent'] = list(map(Ship.from_json, data['Opponent']))
-        data['FireInfos'] = list(map(FireInfo.from_json, data['FireInfos']))
+        # data['FireInfos'] = list(map(FireInfo.from_json, data['FireInfos']))
+        data.pop('FireInfos')
         return cls(**data)
 
 
@@ -456,9 +457,10 @@ class Game:
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
-        self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
-        draft_choice = DraftChoice()
 
+        self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
+
+        draft_choice = DraftChoice([DraftShipChoice(CompleteShipId='forward')] * 5)
         return draft_choice
 
     def attack(self, ship: Ship, closest_enemy: Ship) -> Command or None:
