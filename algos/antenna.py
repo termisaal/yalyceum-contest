@@ -91,7 +91,7 @@ class Physics:
         x1, y1, z1 = point1.coords
         x2, y2, z2 = point2.coords
 
-        points = [(x1, y1, z1)]
+        points = [Vector(x1, y1, z1)]
         x_shift = abs(x2 - x1)
         y_shift = abs(y2 - y1)
         z_shift = abs(z2 - z1)
@@ -417,7 +417,7 @@ class Game:
         return draft_choice
 
     @staticmethod
-    def attack(current_ship: Ship, closest_enemy: Ship, my_ships: List[Ship]) -> Command:
+    def attack(current_ship: Ship, closest_enemy: Ship, my_ships: List[Ship]) -> Command or None:
         guns = [x for x in current_ship.Equipment if isinstance(x, GunBlock)]
         if guns:
             # корабль выбирает оружие с наибольшей дальностью
@@ -434,7 +434,7 @@ class Game:
                     if ship is not current_ship:
                         # проверяем, что длина вектора в data и что точка луча больше или равна
                         if any([Physics.get_len_vector(point - ship.Position)
-                                in data and ship.Position.coords <= point for point in points]):
+                                in data and ship.Position.coords <= point.coords for point in points]):
                             return None
 
                 return Command(Command=ATTACK,
