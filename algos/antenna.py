@@ -491,7 +491,12 @@ class Game:
                                                                          Target=closest_enemy.Position)))
 
     def heal(self, ship: Ship, closest_friend: Ship, user_commands: List[Command]) -> None:
-        pass
+        guns = [x for x in ship.Equipment if isinstance(x, HealBlock)]
+        for gun in guns:
+            user_commands.append(Command(Command=ATTACK,
+                                         Parameters=AttackParameters(Id=ship.Id,
+                                                                     Name=gun.Name,
+                                                                     Target=closest_friend.Position)))
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
