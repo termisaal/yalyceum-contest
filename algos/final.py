@@ -165,12 +165,9 @@ class Physics:
     @staticmethod
     def circle_points(center: Vector, amount: int, angle: int, player_id: int):
         """Метод для нахождения координат построения"""
-        circle_shifts = [Vector(-1, 5, 1), Vector(0, 5, 0), Vector(1, 5, -1),
-                         Vector(2, 4, -2), Vector(3, 3, -2), Vector(4, 2, -2),
-                         Vector(5, 1, -1), Vector(5, 0, 0), Vector(5, -1, 1),
-                         Vector(4, -2, 2), Vector(3, -2, 3), Vector(2, -2, 4),
-                         Vector(1, -1, 5), Vector(0, 0, 5), Vector(-1, 1, 5),
-                         Vector(-2, 4, 2), Vector(-2, 3, 3), Vector(-2, 2, 4)]
+        circle_shifts = [Vector(-1, 2, 3), Vector(-1, 3, 2), Vector(-1, 4, 1), Vector(0, 4, 0), Vector(1, 4, -1),
+                         Vector(2, 3, -1), Vector(3, 2, -1), Vector(4, 1, -1), Vector(4, 0, 0), Vector(4, -1, 1),
+                         Vector(3, -1, 2), Vector(2, -1, 3), Vector(1, -1, 4), Vector(0, 0, 4), Vector(-1, 1, 4)]
 
         k = len(circle_shifts)
 
@@ -481,15 +478,14 @@ class Game:
 
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
 
+        draft_choice.Ships = [DraftShipChoice(CompleteShipId='forward')] * 4 + \
+                             [DraftShipChoice(CompleteShipId='daedalus')] * 4
         draft_choice.Message = f'money: {self.draft_options.Money} | available ships: ' \
-                               f'{", ".join(f"{ship.Id}-{ship.Price}" for ship in self.draft_options.CompleteShips)} ' \
-                               f'| max ships: {self.draft_options.MaxShipsCount} | ' \
-                               f'start area: {self.draft_options.StartArea.From}-{self.draft_options.StartArea.To}'
+                               f'{", ".join(f"{ship.Id}-{ship.Price}" for ship in self.draft_options.CompleteShips)}'
 
         return draft_choice
 
-    @staticmethod
-    def attack(ship: Ship, closest_enemy: Ship, user_commands: List[Command]) -> Command or None:
+    def attack(self, ship: Ship, closest_enemy: Ship, user_commands: List[Command]) -> Command or None:
         guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
         for gun in guns:
             if gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
@@ -498,8 +494,7 @@ class Game:
                                                                          Name=gun.Name,
                                                                          Target=closest_enemy.Position)))
 
-    @staticmethod
-    def heal(ship: Ship, closest_friend: Ship, user_commands: List[Command]) -> None:
+    def heal(self, ship: Ship, closest_friend: Ship, user_commands: List[Command]) -> None:
         guns = [x for x in ship.Equipment if isinstance(x, HealBlock)]
         for gun in guns:
             user_commands.append(Command(Command=ATTACK,
@@ -548,10 +543,9 @@ class Game:
 
                     self.attack(ship, closest_enemy, user_output.UserCommands)
                 else:
-                    heal = [x for x in ship.Equipment if x.Name == 'big_heal'][0]
-                    closest_friend = min(state.My,
-                                         key=lambda x: x.Health and Physics.get_len_vector(ship.Position - x.Position)
-                                                       <= heal.Radius)
+                    closest_friend = min(state.My, key=lambda x: x.Health and Physics.get_len_vector(
+                        ship.Position - x.Position) <= [block for block in ship.Equipment if block.Name == 'big_heal'][
+                                                                     0].Radius)
                     self.heal(ship, closest_friend, user_output.UserCommands)
                     self.attack(ship, closest_enemy, user_output.UserCommands)
             self.setup -= 1
@@ -570,10 +564,9 @@ class Game:
 
                     self.attack(ship, closest_enemy, user_output.UserCommands)
                 else:
-                    heal = [x for x in ship.Equipment if x.Name == 'big_heal'][0]
-                    closest_friend = min(state.My,
-                                         key=lambda x: x.Health and Physics.get_len_vector(ship.Position - x.Position)
-                                                       <= heal.Radius)
+                    closest_friend = min(state.My, key=lambda x: x.Health and Physics.get_len_vector(
+                        ship.Position - x.Position) <= [block for block in ship.Equipment if block.Name == 'big_heal'][
+                                                                     0].Radius)
                     self.heal(ship, closest_friend, user_output.UserCommands)
                     self.attack(ship, closest_enemy, user_output.UserCommands)
             self.angle += 1
