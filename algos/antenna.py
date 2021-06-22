@@ -434,7 +434,7 @@ class Game:
                     if ship is not current_ship:
                         # проверяем, что длина вектора в data и что точка луча больше или равна
                         if any([Physics.get_len_vector(point - ship.Position)
-                                in data and ship.Position.coords <= point.coords for point in points]):
+                                in data and ship.Position <= point for point in points]):
                             return None
 
                 return Command(Command=ATTACK,
