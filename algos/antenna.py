@@ -451,8 +451,11 @@ class Game:
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
+        money = self.draft_options.Money
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
-        ships = [{'CompleteShipId': 'forward', "Position": None} for _ in range(self.draft_options.MaxShipsCount)]
+        ships = []
+        for _ in range(self.draft_options.MaxShipsCount):
+            pass
 
         draft_choice = DraftChoice(Ships=ships)
 
