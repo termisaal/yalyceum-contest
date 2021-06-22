@@ -474,13 +474,16 @@ class Game:
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
+        draft_choice = DraftChoice()
 
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
 
-        draft_choice = DraftChoice(
-            [DraftShipChoice(CompleteShipId='forward')] * 3 +
-            [DraftShipChoice(CompleteShipId='daedalus')] +
-            [DraftShipChoice(CompleteShipId='eclipse')])
+        draft_choice.Ships = [DraftShipChoice(CompleteShipId='forward')] * 3 + \
+                             [DraftShipChoice(CompleteShipId='daedalus')] + \
+                             [DraftShipChoice(CompleteShipId='eclipse')]
+        draft_choice.Message = f'money: {self.draft_options.Money} | available ships: ' \
+                               f'{", ".join(f"{ship.Id}-{ship.Price}" for ship in self.draft_options.CompleteShips)}'
+
         return draft_choice
 
     def attack(self, ship: Ship, closest_enemy: Ship, user_commands: List[Command]) -> Command or None:
