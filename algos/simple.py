@@ -1,6 +1,6 @@
 """
-Корабли выстраиваются по окружности и на протяжении всего боя стараются держать строй
-В итоге вышла какая-то хрень
+Файл-шаблон для всех последующих скриптов
+Прошу, не добавляйте сюда никакой логики поведения, иначе я обижусь
 """
 
 import json
@@ -32,12 +32,12 @@ class Vector:
                       self.y - other.y,
                       self.z - other.z)
 
-    def __mul__(self, k: int):
-        if not isinstance(k, int):
+    def __mul__(self, other):
+        if not isinstance(other, int):
             raise TypeError()
-        return Vector(self.x * k,
-                      self.y * k,
-                      self.z * k)
+        return Vector(self.x * other,
+                      self.y * other,
+                      self.z * other)
 
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
@@ -161,18 +161,6 @@ class Physics:
                 points.append(Vector(x1, y1, z1))
 
         return points[:length or 999]  # не самый лучший вариант, зато в коде места не занимает
-
-    @staticmethod
-    def circle_points(center: Vector, amount: int, angle: int, player_id: int):
-        """Метод для нахождения координат построения"""
-        circle_shifts = [Vector(-1, 2, 3), Vector(-1, 3, 2), Vector(-1, 4, 1), Vector(0, 4, 0), Vector(1, 4, -1),
-                         Vector(2, 3, -1), Vector(3, 2, -1), Vector(4, 1, -1), Vector(4, 0, 0), Vector(4, -1, 1),
-                         Vector(3, -1, 2), Vector(2, -1, 3), Vector(1, -1, 4), Vector(0, 0, 4), Vector(-1, 1, 4)]
-
-        k = len(circle_shifts)
-
-        for i in range(angle, k + angle, k // amount):
-            yield center + circle_shifts[i % k] * player_id
 
 
 # endregion
@@ -380,13 +368,13 @@ class FireInfo(JSONCapability):
 class State(JSONCapability):
     My: List[Ship]
     Opponent: List[Ship]
-    FireInfos: List[FireInfo]
+    # FireInfos: List[FireInfo]
 
     @classmethod
     def from_json(cls, data):
         data['My'] = list(map(Ship.from_json, data['My']))
         data['Opponent'] = list(map(Ship.from_json, data['Opponent']))
-        data['FireInfos'] = list(map(FireInfo.from_json, data['FireInfos']))
+        # data['FireInfos'] = list(map(FireInfo.from_json, data['FireInfos']))
         return cls(**data)
 
 
@@ -399,7 +387,6 @@ class State(JSONCapability):
 MOVE = 'MOVE'
 ACCELERATE = 'ACCELERATE'
 ATTACK = 'ATTACK'
-DEFEND = 'DEFEND'
 
 
 @dataclass
@@ -427,12 +414,6 @@ class AttackParameters(CommandParameters):
 
 
 @dataclass
-class DefendParameters(CommandParameters):
-    Id: int
-    Name: str
-
-
-@dataclass
 class Command(JSONCapability):
     Command: str
     Parameters: CommandParameters
@@ -450,81 +431,35 @@ class UserOutput(JSONCapability):
 class Game:
     def __init__(self):
         self.draft_options = None
-        self.setup = 7
-        self.angle = 1
-        self.targeted = None
 
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
-        self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
-        draft_choice = DraftChoice()
 
+        draft_choice = DraftChoice([DraftShipChoice(CompleteShipId='forward')] * 5)
         return draft_choice
-
-    def attack(self, ship: Ship, closest_enemy: Ship) -> Command or None:
-        guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
-        if guns:
-            # корабль выбирает оружие с наибольшей дальностью
-            ranged_gun = max(guns, key=lambda x: x.Radius)
-
-            if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
-                return Command(Command=ATTACK,
-                               Parameters=AttackParameters(Id=ship.Id,
-                                                           Name=ranged_gun.Name,
-                                                           Target=closest_enemy.Position))
-        return None
 
     def battle(self, data: dict) -> UserOutput:
         state = State.from_json(data)
         user_output = UserOutput()
         user_output.UserCommands = []
 
-        if self.targeted is None or self.targeted.Id not in [enemy.Id for enemy in state.Opponent]:
-            self.targeted = min(state.Opponent,
-                                key=lambda x: sum([Physics.get_len_vector(y.Position - x.Position) for y in state.My]))
+        for ship in state.My:
+            nearest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
 
-        if self.setup == 7:
-            for ship in state.My:
-                user_output.UserCommands.append(Command(Command=MOVE,
-                                                        Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=ship.Position +
-                                                                                         Vector(3, 3, 3) *
-                                                                                         self.draft_options.PlayerId)))
+            # перемещение
+            user_output.UserCommands.append(Command(Command=MOVE,
+                                                    Parameters=MoveParameters(Id=ship.Id,
+                                                                              Target=nearest_enemy.Position)))
 
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
-                if command is not None:
-                    user_output.UserCommands.append(command)
-
-            self.setup -= 1
-        elif self.setup > 0:
-            center = Vector(3, 3, 3) if self.draft_options.PlayerId > 0 else Vector(26, 26, 26)
-
-            for ship, ship_coord in zip(state.My, Physics.circle_points(center,
-                                                                        len(state.My), 0,
-                                                                        self.draft_options.PlayerId)):
-                user_output.UserCommands.append(Command(Command=MOVE,
-                                                        Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=ship_coord)))
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
-                if command is not None:
-                    user_output.UserCommands.append(command)
-            self.setup -= 1
-        else:
-            center = Vector(15, 15, 15)
-
-            for ship, ship_coord in zip(state.My, Physics.circle_points(center,
-                                                                        len(state.My), self.angle,
-                                                                        self.draft_options.PlayerId)):
-                user_output.UserCommands.append(Command(Command=MOVE,
-                                                        Parameters=MoveParameters(Id=ship.Id,
-                                                                                  Target=ship_coord)))
-                closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy)
-                if command is not None:
-                    user_output.UserCommands.append(command)
-            self.angle += 1
+            # атака
+            if ship.Energy >= 20:
+                guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
+                for gun in guns:
+                    if gun.Radius < Physics.get_len_vector(ship.Position - nearest_enemy.Position) + 2:
+                        user_output.UserCommands.append(Command(Command=ATTACK,
+                                                                Parameters=AttackParameters(Id=ship.Id,
+                                                                                            Name=gun.Name,
+                                                                                            Target=nearest_enemy.Position)))
 
         return user_output
 
