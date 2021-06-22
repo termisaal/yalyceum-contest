@@ -187,6 +187,7 @@ class BlockType(Enum):
     Engine = 2
     Health = 3
     Delta = 4
+    Daedalus = 7
 
 
 class EffectType(Enum):
@@ -210,6 +211,8 @@ class Block(JSONCapability):
             return HealthBlock(**data)
         elif BlockType(data['Type']) == BlockType.Delta:
             return DeltaBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Daedalus:
+            return DaedalusBlock(**data)
 
 
 
@@ -249,6 +252,17 @@ class DeltaBlock(Block):
     Armor: int
     EnergyPrice: int
     Name: str
+
+
+@dataclass
+class DaedalusBlock(Block):
+    Type = BlockType.Delta
+    EnergyPrice: int
+    Radius: int
+    HealthGain: int
+    EnergyGain: int
+    Name: str
+
 
 # endregion
 
