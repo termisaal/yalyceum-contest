@@ -42,8 +42,23 @@ class Vector:
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
 
+    def __eq__(self, other):
+        return self.coords == other.coords
+
+    def __ne__(self, other):
+        return self.coords != other.coords
+
+    def __gt__(self, other):
+        return self.coords > other.coords
+
+    def __lt__(self, other):
+        return self.coords < other.coords
+
+    def __ge__(self, other):
+        return self.coords >= other.coords
+
     def __le__(self, other):
-        return self.x <= other.x and self.y <= other.y and self.z <= other.z
+        return self.coords <= other.coords
 
     @property
     def coords(self):
