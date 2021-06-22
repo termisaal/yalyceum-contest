@@ -42,8 +42,23 @@ class Vector:
     def __str__(self):
         return f'{self.x}/{self.y}/{self.z}'
 
+    def __eq__(self, other):
+        return self.coords == other.coords
+
+    def __ne__(self, other):
+        return self.coords != other.coords
+
+    def __gt__(self, other):
+        return self.coords > other.coords
+
+    def __lt__(self, other):
+        return self.coords < other.coords
+
+    def __ge__(self, other):
+        return self.coords >= other.coords
+
     def __le__(self, other):
-        return self.x <= other.x and self.y <= other.y and self.z <= other.z
+        return self.coords <= other.coords
 
     @property
     def coords(self):
@@ -91,7 +106,7 @@ class Physics:
         x1, y1, z1 = point1.coords
         x2, y2, z2 = point2.coords
 
-        points = [Vector(x1, y1, z1)]
+        points = [(x1, y1, z1)]
         x_shift = abs(x2 - x1)
         y_shift = abs(y2 - y1)
         z_shift = abs(z2 - z1)
@@ -417,7 +432,7 @@ class Game:
         return draft_choice
 
     @staticmethod
-    def attack(current_ship: Ship, closest_enemy: Ship, my_ships: List[Ship]) -> Command:
+    def attack(current_ship: Ship, closest_enemy: Ship, my_ships: List[Ship]) -> Command or None:
         guns = [x for x in current_ship.Equipment if isinstance(x, GunBlock)]
         if guns:
             # корабль выбирает оружие с наибольшей дальностью
