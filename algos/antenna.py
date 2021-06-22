@@ -187,6 +187,7 @@ class BlockType(Enum):
     Engine = 2
     Health = 3
     Shield = 4
+    Radar = 6
     Heal = 7
 
 
@@ -211,6 +212,8 @@ class Block(JSONCapability):
             return HealthBlock(**data)
         elif BlockType(data['Type']) == BlockType.Shield:
             return ShieldBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Radar:
+            return RadarBlock(**data)
         elif BlockType(data['Type']) == BlockType.Heal:
             return HealBlock(**data)
 
@@ -250,6 +253,12 @@ class ShieldBlock(Block):
     Type = BlockType.Shield
     EnergyPrice: int
     Armor: int
+
+
+@dataclass
+class RadarBlock(Block):
+    EnergyPrice: int
+    Radius: int
 
 
 @dataclass
@@ -402,6 +411,7 @@ MOVE = 'MOVE'
 ACCELERATE = 'ACCELERATE'
 ATTACK = 'ATTACK'
 DEFEND = 'DEFEND'
+SCAN = 'SCAN'
 
 
 @dataclass
@@ -430,6 +440,12 @@ class AttackParameters(CommandParameters):
 
 @dataclass
 class DefendParameters(CommandParameters):
+    Id: int
+    Name: str
+
+
+@dataclass
+class ScanParameters(CommandParameters):
     Id: int
     Name: str
 
