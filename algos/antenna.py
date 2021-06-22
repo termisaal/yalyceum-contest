@@ -478,7 +478,9 @@ class Game:
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
 
         draft_choice = DraftChoice(
-            [DraftShipChoice(CompleteShipId='forward')] * 4 + [DraftShipChoice(CompleteShipId='daedalus')])
+            [DraftShipChoice(CompleteShipId='forward')] * 3 +
+            [DraftShipChoice(CompleteShipId='daedalus')] +
+            [DraftShipChoice(CompleteShipId='eclipse')])
         return draft_choice
 
     def attack(self, ship: Ship, closest_enemy: Ship, user_commands: List[Command]) -> Command or None:
