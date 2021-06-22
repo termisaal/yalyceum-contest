@@ -487,7 +487,7 @@ class Game:
                                                                                          self.draft_options.PlayerId)))
 
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy, State.My)
+                command = self.attack(ship, closest_enemy, state.My)
                 if command is not None:
                     user_output.UserCommands.append(command)
 
@@ -502,7 +502,7 @@ class Game:
                                                         Parameters=MoveParameters(Id=ship.Id,
                                                                                   Target=ship_coord)))
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy, State.My)
+                command = self.attack(ship, closest_enemy, state.My)
                 if command is not None:
                     user_output.UserCommands.append(command)
             self.setup -= 1
@@ -516,7 +516,7 @@ class Game:
                                                         Parameters=MoveParameters(Id=ship.Id,
                                                                                   Target=ship_coord)))
                 closest_enemy = min(state.Opponent, key=lambda x: Physics.get_len_vector(ship.Position - x.Position))
-                command = self.attack(ship, closest_enemy, State.My)
+                command = self.attack(ship, closest_enemy, state.My)
                 if command is not None:
                     user_output.UserCommands.append(command)
             self.angle += 1
