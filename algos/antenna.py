@@ -465,14 +465,11 @@ class Game:
 
     def attack(self, ship: Ship, closest_enemy: Ship) -> Command or None:
         guns = [x for x in ship.Equipment if isinstance(x, GunBlock)]
-        if guns:
-            # корабль выбирает оружие с наибольшей дальностью
-            ranged_gun = max(guns, key=lambda x: x.Radius)
-
-            if ranged_gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
+        for gun in guns:
+            if gun.Radius * 3 >= Physics.get_len_vector(ship.Position - closest_enemy.Position):
                 return Command(Command=ATTACK,
                                Parameters=AttackParameters(Id=ship.Id,
-                                                           Name=ranged_gun.Name,
+                                                           Name=gun.Name,
                                                            Target=closest_enemy.Position))
         return None
 
