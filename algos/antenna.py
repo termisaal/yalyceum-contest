@@ -186,6 +186,7 @@ class BlockType(Enum):
     Gun = 1
     Engine = 2
     Health = 3
+    Delta = 4
 
 
 class EffectType(Enum):
@@ -207,6 +208,9 @@ class Block(JSONCapability):
             return EngineBlock(**data)
         elif BlockType(data['Type']) == BlockType.Health:
             return HealthBlock(**data)
+        elif BlockType(data['Type']) == BlockType.Delta:
+            return DeltaBlock(**data)
+
 
 
 @dataclass
@@ -238,6 +242,13 @@ class HealthBlock(Block):
     MaxHealth: int
     StartHealth: int
 
+
+@dataclass
+class DeltaBlock(Block):
+    Type = BlockType.Delta
+    Armor: int
+    EnergyPrice: int
+    Name: str
 
 # endregion
 
@@ -427,7 +438,9 @@ class Game:
     def draft(self, data: dict) -> DraftChoice:
         self.draft_options = DraftOptions.from_json(data)
         self.draft_options.PlayerId = -(self.draft_options.PlayerId or -1)  # 1 низ, -1 вверх
-        draft_choice = DraftChoice(Ships=[Ship(Name='Starstorm') for _ in self.draft_options.MaxShipsCount])
+        ships = [{'CompleteShipId': 'forward', "Position": None} for _ in range(self.draft_options.MaxShipsCount)]
+
+        draft_choice = DraftChoice(Ships=ships)
 
         return draft_choice
 
