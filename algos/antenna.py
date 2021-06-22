@@ -91,7 +91,7 @@ class Physics:
         x1, y1, z1 = point1.coords
         x2, y2, z2 = point2.coords
 
-        points = [(x1, y1, z1)]
+        points = [Vector(x1, y1, z1)]
         x_shift = abs(x2 - x1)
         y_shift = abs(y2 - y1)
         z_shift = abs(z2 - z1)
